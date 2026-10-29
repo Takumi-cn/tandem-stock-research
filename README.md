@@ -1,116 +1,195 @@
-# TANDEM · A 股双轨研究台
+# Falsification-First Quant Research
 
-[中文](#中文) · [English](#english)
+**基于小样本与严格风控的 A 股量化策略证伪与复盘工具**
 
-> 一个本地优先的 A 股短线 / 长线研究原型。**它不是交易系统，不承诺收益，也不构成投资建议。**
+[English](#english) · [中文](#中文) · [For reviewers](docs/FOR_REVIEWERS.md)
 
-![TANDEM UI](docs/assets/ui.png)
+> A native desktop research workstation that treats **disproving a strategy** as a first-class outcome.
+>
+> 一个把“证伪”当作成果的原生量化研究工具。
 
-*界面截图使用作者本地研究数据，仅用于展示交互与信息组织，不构成任何推荐。*
+![TANDEM desktop UI](docs/assets/ui.png)
 
----
+*A screenshot from the author's local research run. It is a UI demonstration, not an investment recommendation.*
 
-## 中文
+## At a glance
 
-### 这是什么
+- **Native PySide6 desktop application** — no browser shell, no Edge app mode, no automatic order routing.
+- **End-to-end A-share research pipeline**: data ingestion → feature contracts → model ensemble → probability gate → T+1 ledger → next-day review.
+- **Evidence over storytelling**: purged walk-forward, negative controls, cost stress, DSR/PBO diagnostics, bootstrap intervals and minimum detectable effects.
+- **A deliberately negative result**: the compact model did **not** show a robust after-cost edge. That result is kept and documented instead of hidden.
+- **Engineering under constraints**: runs on a single RTX 4060; the daily pipeline is roughly 10–16 minutes; no paid market-data subscription is required.
 
-TANDEM 是一个运行在 Windows 桌面上的原生研究工具。它把“短线只做上涨、长线按长期持有管理”的规则做成一个可审计的每日流程：
+## The research question
 
-- **短线轨**：在电池行业池中，从当日涨幅第一页（默认 20 只）按次日上涨概率选 Top1；概率低于 **55%** 时不出手。
-- **长线轨**：固定观察中国铁物 `000927`，允许上涨 / 下跌 / 中性；单日方向只作辅助，不改变长期框架。
-- **数据与模型**：日线、行业、新闻/情绪与 5 分钟研究缓存；LightGBM 排序/回归、深度模型多种子、MR20/REV5、Kronos 零样本，按市场状态路由固定权重。
-- **执行纪律**：T+1 口径、成本压力、可交易性审计、冻结台账、次日复盘。
-- **桌面界面**：PySide6 原生窗口，无浏览器；包含短线/长线结论、依据、候选池、申万二级行业榜、复盘与运行状态。
-- **行业信息层**：申万二级行业实时排行 + 悬停成分股；仅信息展示，不接入短线打分或交易信号。
+> Can a compact, resource-constrained ensemble rank next-day A-share winners well enough to survive realistic execution and transaction costs?
 
-### 研究状态（客观）
+**Current answer: not demonstrated.** The project is therefore framed as a research and engineering artifact, not a profitable trading system.
 
-这不是一个已经被证明能赚钱的策略。相反，仓库保留了失败和负面结果：
+The important distinction is:
 
-| 口径 | 结果 |
-|---|---|
-| 742 个样本外交易日，Top1 账户，14.5bps/边 | 1.011x |
-| 同上，25bps/边 | 0.463x |
-| 同上，40bps/边 | 0.151x |
-| 同窗口最大回撤 | -80.2% |
-| 近 120 日 Top1，扣 14.5bps 后 2 日净收益 | +0.043%，95% CI [-1.153%, +1.302%]，p(≤0)=0.477 |
-| 近 120 日门槛日净收益 | +0.379%，95% CI [-1.265%, +2.036%]，p=0.329 |
+- A **backtest with a positive arithmetic mean** is not an investable edge.
+- A **negative result under realistic costs** is still a valid research contribution if the experiment was designed, pre-registered, and audited properly.
 
-结论：**成本后优势没有被证明，25bps 压力下历史账户为负。** 55% 门槛是风险纪律，不是收益保证。ENC-002/行业层/页内 top-K 等研究方向均未通过；breadth 仅在 60 日影子观察中。详见 [research status](docs/RESEARCH_STATUS.md)。
+## Why this repository exists
 
-### 快速开始
+Most public “quant” repositories optimize for an attractive equity curve. This one optimizes for a defensible process:
+
+1. **Falsification first.** Each new branch has a written hypothesis, acceptance criteria, and a stop rule.
+2. **Leakage and PIT discipline.** Feature availability is part of the contract; future-data injection tests fail closed.
+3. **Costs are part of the label.** T+1 execution, turnover, fees and slippage are modeled before a strategy is called promising.
+4. **Small samples are treated as small.** Effective sample size, confidence intervals and minimum detectable effects are reported, not ignored.
+5. **Negative results stay in the record.** Failed branches are not quietly retuned until something looks good.
+6. **The system is shipped.** Data, models, reports, ledger and a native desktop UI are integrated, not left as a notebook.
+
+### Reviewer note
+
+For a research-engineering or data-engineering review, the value of this repository is the combination of:
+
+- **systems engineering** (native UI, async data feed, cache fallback, failure recovery, resource bounds),
+- **applied ML** (ensemble routing, probability ranking, calibration and OOS diagnostics),
+- **research integrity** (pre-registration, leakage tests, cost stress, multiple-comparison awareness, publishable negative results),
+- **communication** (bilingual documentation, explicit limitations, reproducible commands).
+
+This is **not** a claim of alpha. It is a claim of process: the author can build a complete research system and stop when the evidence says stop. See [For Reviewers](docs/FOR_REVIEWERS.md) for a 60-second guide.
+
+## Evidence
+
+### Long-window Top1 (19 purged folds, 742 out-of-sample days, 2023-09..2026-10)
+
+| Assumption | Account path |
+|---|---:|
+| 14.5 bps/side | 1.011x |
+| 25 bps/side | **0.463x** |
+| 40 bps/side | **0.151x** |
+
+- Maximum cohort drawdown: **−80.2%**
+- Daily volatility ≈6.4%; daily turnover ≈94%
+- Effective independent observations ≈371 (2-day overlapping labels)
+- Minimum detectable mean daily net return ≈0.829%/day — the sample is too small to certify a small edge
+- Arithmetic net mean can look positive while geometric/account return is flat or negative; never quote arithmetic mean as annual return
+
+### TOP1-AUDIT-002 (120 signal days, 2026-04-27..2026-10-23, T+1 open→T+2 close)
+
+| Definition | Result |
+|---|---:|
+| Realizable 2-day net at 14.5 bps | +0.043% |
+| 95% CI | [−1.153%, +1.302%] |
+| p(≤0) | 0.477 |
+| 25 bps stress | negative |
+| Gated-day net | +0.379%, CI [−1.265%, +2.036%], p=0.329 |
+
+### What was tested and rejected
+
+- `MICRO-005-ENC-002`: compact encoder → no incremental value (`ENCODER_FAIL`)
+- Industry-layer v4 / v4.1 / Experiment A → rejected
+- Page top-K and portfolio expansion → not better than Top1 under the tested definitions
+- Breadth overlay → data feasibility partial; exact limit price only a proxy; realtime breadth unavailable; kept as a 60-day shadow
+- Calibration/conformal diagnostics → useful, not promoted without forward evidence
+
+The full record is in [docs/RESEARCH_STATUS.md](docs/RESEARCH_STATUS.md).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A[Daily / industry / news / 5m data] --> B[Feature contracts and PIT guards]
+  B --> C[L1 ranker + deep ensembles + L0 + Kronos]
+  C --> D[State-routed ensemble]
+  D --> E[Next-day up-probability]
+  E --> F{55% gate}
+  F -->|below| G[No-trade / wait]
+  F -->|above| H[Top1 candidate + risk levels]
+  G --> I[T+1 ledger and next-day review]
+  H --> I
+  I --> J[Native PySide6 research UI]
+  B --> K[Leakage / feature-contract tests]
+  D --> L[Walk-forward / DSR / PBO / cost audits]
+```
+
+The system deliberately separates **research**, **production snapshot**, and **execution discipline**. It has no broker integration and cannot place orders.
+
+## Desktop application
+
+- Native frameless PySide6 window, Dynamic-Island-style surfaces, 45fps ambient paint bus and 60fps interactions.
+- Short-term conclusion, long-term conclusion, evidence, top-page candidates, SW level-2 industry board, review and run status.
+- Hover member popup for industries; explicitly information-only, not a trading signal.
+- Frozen prediction ledger, stale-data guards and a 55% no-trade rule.
+
+![Industry popup](docs/assets/industry-popup.png)
+
+## Quick start
 
 ```bash
 python -m venv .venv
 # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-copy config\watchlist.example.yaml config\watchlist.yaml   # 按自己的研究需要修改
+copy config\watchlist.example.yaml config\watchlist.yaml
 python -m src.data.fetch_baostock
 python -m src.features.build
 python -m src.report.run_full
 pythonw run_gui.pyw
 ```
 
-数据、模型权重、运行日志、预测台账和截图来源数据**不包含在仓库中**。完整管线在作者的 RTX 4060 上约 10–16 分钟；没有 GPU 时可以跳过 Kronos（代码会优雅降级）。Kronos 权重需要按上游项目自行获取，仓库只包含其源码与许可证。
+- Market data, model weights, the live ledger and run logs are **not included**.
+- GPU is optional; without it, the Kronos member is skipped and the rest of the pipeline degrades gracefully.
+- The full pipeline takes roughly 10–16 minutes on the author's RTX 4060.
+- Windows setup and scheduled-task helpers are in [`scripts/`](scripts/).
+- Tests: `pytest tests` — leakage, feature-contract and metric-definition checks, not proof of profitability.
 
-### 目录
+## Repository map
 
-```
-src/            数据、特征、模型、评估、报告与 PySide6 界面
-config/         目标、申万行业映射、示例自选股
-docs/           设计、数据方案、执行手册与研究状态
-tests/          防泄漏、特征契约、指标口径测试
-scripts/        Windows 安装、更新与计划任务脚本
-vendors/Kronos/ Kronos 上游源码与许可证（不含权重）
-assets/         应用图标
-run_gui.pyw     桌面入口
-run_daily.pyw   每日静默更新入口（计划任务）
-```
-
-### 重要限制
-
-- 免费数据源存在分类非 PIT、涨跌停只能做代理、实时 breadth 不可用等限制；行业卡片和个股排行都不能替代真实交易数据。
-- 历史结果包含幸存者/分类/执行假设；不要把它当作未来收益承诺。
-- 不包含任何券商接口、自动下单或实盘执行代码。
-- 本项目是研究/工程展示，不是投资顾问服务。
-
-### 测试
-
-```bash
-pytest tests
+```text
+src/             data, features, models, evaluation, reports, PySide6 UI
+config/          targets, SW industry map, example watchlist
+docs/            design, data, execution and research status
+tests/           leakage, feature-contract and metric-definition tests
+scripts/         Windows setup / update / scheduler helpers
+vendors/Kronos/  upstream source + license (no weights)
+assets/          application icons
+run_gui.pyw      native desktop entry
+run_daily.pyw    daily silent update entry
 ```
 
-测试覆盖特征时点契约、未来数据泄漏、指标定义等；它们验证代码约束，不证明策略收益。
+## Limitations and non-claims
+
+- Free data is not fully point-in-time; current SW classification is not historical PIT.
+- Exact limit-up/down and realtime breadth are unavailable; only proxies are used.
+- Delisted-stock coverage and suspension handling remain limited.
+- Historical results embed survivorship, classification and execution assumptions.
+- No broker API, order routing, live execution, or investment advice.
+- **No demonstrated after-cost alpha.** Do not treat the UI output as a recommendation.
+
+## Third-party and license
+
+No license is granted for this repository by default. The Kronos source under `vendors/Kronos` retains its upstream license; see [vendors/Kronos/LICENSE](vendors/Kronos/LICENSE). Market data and model weights are not redistributed.
 
 ---
 
 ## English
 
-### What it is
+This repository is a **falsification-first quantitative research workstation** for A-share short- and long-horizon decision support. It is intentionally not a profitability claim.
 
-TANDEM is a native Windows desktop research workstation for A-share short-term and long-term decision support. It is a **research prototype, not a trading system, and not investment advice**.
+### What it does
 
-- **Short sleeve**: within a battery-industry pool, rank the current top-20 gainers by next-day up-probability and select Top1. If probability is below **55%**, the rule is to stay out.
-- **Long sleeve**: track `000927` (China Railway Materials) under a long-horizon framing; daily direction is informational only.
-- **Data/model**: daily bars, industry indices, news/sentiment and 5-minute research caches; LightGBM, deep ensembles, MR20/REV5, and zero-shot Kronos with state-routed fixed weights.
-- **Execution discipline**: T+1 accounting, cost stress, tradability checks, frozen prediction ledger, next-day review.
-- **Native PySide6 UI**: no browser shell; short/long conclusions, evidence, candidate pool, SW level-2 industry board, review and run status.
-- **Industry information layer**: SW level-2 realtime ranking with hover member lists. Information only; it does not alter stock scoring, the 55% gate, or production outputs.
+- **Short sleeve**: rank the current top-20 gainers in a battery-industry pool by next-day up-probability and select Top1. The 55% gate is a no-trade rule, not a return guarantee.
+- **Long sleeve**: track `000927` under a long-horizon framing; daily direction is informational only.
+- **Research stack**: daily/industry/news/5-minute data, LightGBM, deep ensembles, MR20/REV5 and zero-shot Kronos; state-routed fixed weights.
+- **Execution discipline**: T+1 accounting, cost stress, frozen ledger, next-day review, stale-data guards.
+- **Native UI**: PySide6 desktop, no browser; SW level-2 industry board with hover member lists (information only).
 
-### Research status (honest)
+### What is proven
 
-This is not a proven profitable strategy. Negative and failed results are kept in the repository:
+The project proves that a compact model can be **built, integrated, audited, and falsified**. It does **not** prove a profitable after-cost strategy:
 
-| Definition | Result |
-|---|---|
-| 742 out-of-sample days, Top1 account, 14.5 bps/side | 1.011x |
-| Same, 25 bps/side | 0.463x |
-| Same, 40 bps/side | 0.151x |
-| Max drawdown in that window | -80.2% |
-| Last 120 days, Top1, 2-day net at 14.5 bps | +0.043%, 95% CI [-1.153%, +1.302%], p(≤0)=0.477 |
-| Last 120 days, gated days net | +0.379%, 95% CI [-1.265%, +2.036%], p=0.329 |
+- 742 OOS days, Top1 account: 1.011x at 14.5 bps/side; **0.463x** at 25 bps; **0.151x** at 40 bps.
+- Maximum cohort drawdown −80.2%; effective n≈371; MDE ≈0.829%/day.
+- Last 120 days: realizable 2-day net at 14.5 bps +0.043%, 95% CI [−1.153%, +1.302%], p(≤0)=0.477.
+- Several research branches failed and remain documented rather than retuned away.
 
-**There is no demonstrated after-cost edge; the 25 bps account is negative historically.** The 55% gate is a risk discipline, not a return guarantee. ENC-002, industry-layer variants, and page top-K research failed; breadth remains a 60-day shadow. See [research status](docs/RESEARCH_STATUS.md).
+### For reviewers
+
+If you are evaluating this as a research-engineering portfolio, start with [docs/FOR_REVIEWERS.md](docs/FOR_REVIEWERS.md). The short version: this demonstrates end-to-end system building, leakage-aware ML, cost-aware evaluation, and the discipline to publish a negative result.
 
 ### Quick start
 
@@ -124,39 +203,8 @@ python -m src.report.run_full
 pythonw run_gui.pyw
 ```
 
-Data snapshots, model weights, ledgers, run logs, and source data are **not included**. The full pipeline takes roughly 10–16 minutes on the author's RTX 4060; without a GPU, Kronos degrades gracefully. Kronos weights must be obtained separately; only its source and license are vendored.
+Data, model weights, live ledgers and logs are excluded. The pipeline takes about 10–16 minutes on an RTX 4060; GPU is optional.
 
-### Repository layout
+### Non-claims
 
-```
-src/            data, features, models, evaluation, reports, PySide6 UI
-config/         targets, SW industry map, example watchlist
-docs/           design, data, execution and research status
-tests/          leakage, feature-contract and metric-definition tests
-scripts/        Windows setup/update/scheduler scripts
-vendors/Kronos/ upstream source + license (no weights)
-assets/         application icons
-run_gui.pyw     desktop entry
-run_daily.pyw   daily silent update entry
-```
-
-### Limitations
-
-- Free data sources are not fully point-in-time; exact limit-up/down and realtime breadth are unavailable. Industry boards are informational, not trading data.
-- Historical results embed survivorship, classification and execution assumptions. They are not a promise of future returns.
-- No broker integration, order routing, or live execution is included.
-- Research/engineering artifact only; not an investment advisory service.
-
-### Tests
-
-```bash
-pytest tests
-```
-
-The tests cover feature availability contracts, look-ahead leakage and metric definitions. They validate engineering constraints, not profitability.
-
----
-
-## License / third-party
-
-No license is granted for this repository by default. Kronos source under `vendors/Kronos` retains its upstream license; see [vendors/Kronos/LICENSE](vendors/Kronos/LICENSE). Market data and model weights are not redistributed.
+This is research/engineering work, not investment advice. There is no broker integration, no order routing, and no demonstrated after-cost alpha. Historical metrics are not promises of future returns.
