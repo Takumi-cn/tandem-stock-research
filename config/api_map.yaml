@@ -1,0 +1,23 @@
+# 接口适配层映射表（D-11）：函数名/参数/字段映射集中管理，akshare 升级改名只改这里
+akshare:
+  sw_second_info:
+    candidates:            # 按序尝试
+      - {func: sw_index_second_info, args: {}}
+      - {func: index_analysis_sw11002, args: {symbol: 二级行业}}
+  sw_cons:
+    candidates:            # akshare 1.19.3 现行接口在前
+      - {func: index_component_sw, args: {symbol: "{sw_code}"}}
+      - {func: sw_index_third_cons, args: {symbol: "{sw_code}"}}
+  daily_hist:
+    candidates:
+      - {func: stock_zh_a_hist, args: {symbol: "{code6}", period: daily, start_date: "{start}", end_date: "{end}", adjust: qfq}}
+  stock_news:
+    candidates:
+      - {func: stock_news_em, args: {symbol: "{code6}"}}
+baostock:
+  daily:
+    func: query_history_k_data_plus
+    fields: date,code,open,high,low,close,preclose,volume,amount,turn,pctChg,isST
+validation:
+  code_regex: '^\d{6}\.(SH|SZ|BJ)$'
+  price_diff_alert: 0.005     # 双源对账收盘价差异阈值 0.5%

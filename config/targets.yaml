@@ -1,0 +1,23 @@
+# 双标的配置（D-23 冻结，2026-10-25）
+short_target: auto        # 系统每日对第一页全名单评分推荐 Top1（报告附完整排名）；如需固定标的改填6位代码
+long_target: "000927"     # 中国铁物（固定）
+industry: "881262"        # 短线轨行业：电池（客户端页签代码；申万二级"电池"）
+industry_sw_name: "电池"   # 申万二级名称（akshare 接口用）
+industry_sw_code: "801737"  # 申万电池指数代码（2026-10-25 sw_index_second_info 实测回填）
+pool_view: gainers_desc   # "第一页"语义：涨幅降序前N（与客户端默认视图一致）；可改 code_asc
+page_size: 20             # 第一页N值；P1 实测客户端每页行数后修正
+llm_daily: off            # 本地LLM反思层默认关（D-12/D-14）
+
+# 数据源（D-04/D-23）
+data_sources:
+  daily_primary: akshare      # stock_zh_a_hist 前复权
+  daily_backup: baostock      # query_history_k_data_plus + 复权因子
+  industry: akshare_sw        # 乐咕乐股源申万接口；成分接口失效时降级链见 api_map.yaml
+  news: akshare_em
+
+# 抓取纪律
+fetch:
+  sleep_seconds: 0.8          # 每请求间隔（限速，同时压低CPU/网络占用）
+  max_retries: 3
+  backoff_seconds: 5
+  history_years: 5            # 日线历史 ≥5年

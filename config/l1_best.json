@@ -1,0 +1,13 @@
+{
+  "objective": "regression",
+  "n_estimators": 150,
+  "learning_rate": 0.06682067066029428,
+  "num_leaves": 29,
+  "min_child_samples": 100,
+  "subsample": 0.7342707781472321,
+  "subsample_freq": 1,
+  "colsample_bytree": 0.6511770436081842,
+  "n_jobs": 8,
+  "verbose": -1,
+  "random_state": 42
+}

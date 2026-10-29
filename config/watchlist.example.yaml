@@ -1,0 +1,5 @@
+# Copy this file to config/watchlist.yaml and edit for your own research.
+watchlist: []
+long_target: "000927"
+reward_per_hit: 50
+sheet_path: "reports/guess_record.xlsx"
